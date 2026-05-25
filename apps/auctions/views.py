@@ -33,6 +33,7 @@ from apps.auctions.serializers import (
     BidCreateSerializer,
     BidSerializer,
 )
+from apps.auctions.tasks import notify_outbid
 
 
 class AuctionItemViewSet(viewsets.ModelViewSet):
@@ -50,6 +51,8 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
             tenant=self.request.user.tenant,
             created_by=self.request.user,
         )
+        # audit log é populado por signal — actor vem do thread-local
+        # (JWTAuthCapturesCurrentUser).
 
     @action(detail=True, methods=["post"], url_path="bid")
     def place_bid(self, request, pk=None):
@@ -108,5 +111,8 @@ class AuctionItemViewSet(viewsets.ModelViewSet):
             )
             auction.current_price = amount
             auction.save(update_fields=["current_price", "updated_at"])
+
+        # dispara fora da transação — se a task falhar, o bid persiste mesmo
+        notify_outbid.delay(bid.pk)
 
         return Response(BidSerializer(bid).data, status=status.HTTP_201_CREATED)
