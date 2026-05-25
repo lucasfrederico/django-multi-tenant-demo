@@ -1,0 +1,41 @@
+# Postgres + Redis locais para desenvolvimento.
+# Postgres 16: versão que rodo em produção hoje no projeto Java.
+# Redis 7: idem.
+#
+# Sobe com: docker compose up -d
+# Limpa volumes: docker compose down -v
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: dmt_postgres
+    environment:
+      POSTGRES_USER: dmt_user
+      POSTGRES_PASSWORD: dmt_dev_password
+      POSTGRES_DB: dmt_dev
+    ports:
+      - "5433:5432"  # 5433 pra não conflitar com Postgres do host se tiver
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dmt_user -d dmt_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: dmt_redis
+    ports:
+      - "6380:6379"  # 6380 pra não conflitar
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:
