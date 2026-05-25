@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     # Local
     "apps.tenants",
     "apps.auctions",
+    "apps.audit",
 ]
 
 MIDDLEWARE = [
@@ -49,6 +50,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # Captura request.user em thread-local pra signals lerem
+    "apps.audit.middleware.CurrentUserMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -102,7 +105,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "apps.audit.middleware.JWTAuthCapturesCurrentUser",
     ),
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
